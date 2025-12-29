@@ -1,6 +1,3 @@
-/**
- * Signup page - supports email/password and mobile/OTP
- */
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
+import Navbar from '@/components/Navbar';
 
 export default function SignupPage() {
-  const [signupMethod, setSignupMethod] = useState('email'); // email, mobile
+  const [signupMethod, setSignupMethod] = useState('email');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -56,13 +54,12 @@ export default function SignupPage() {
     try {
       const response = await api.verifyOTP(registeredEmail, null, otp, 'email_verification');
       
-      // Store tokens and user data
       const token = response.access_token || response.token;
       const user = response.user;
       
       if (token) {
         localStorage.setItem('access_token', token);
-        localStorage.setItem('token', token); // Backward compatibility
+        localStorage.setItem('token', token);
         if (response.refresh_token) {
           localStorage.setItem('refresh_token', response.refresh_token);
         }
@@ -70,16 +67,18 @@ export default function SignupPage() {
           localStorage.setItem('user', JSON.stringify(user));
         }
         
-        // Redirect based on role
         const roleDashboards = {
-          worker: '/dashboard/worker',
-          provider: '/dashboard/provider',
+          worker: '/worker/onboarding',
+          delivery_worker: '/worker/onboarding',
+          aeps_agent: '/worker/onboarding',
+          company: '/dashboard/company',
+          provider: '/dashboard/company',
           bank: '/dashboard/bank',
           police: '/dashboard/police',
           admin: '/dashboard/admin',
         };
         
-        router.push(roleDashboards[user.role] || '/dashboard/worker');
+        router.push(roleDashboards[user.role] || '/worker/onboarding');
       }
     } catch (err) {
       setError(err.message || 'OTP verification failed');
@@ -94,7 +93,6 @@ export default function SignupPage() {
       await api.resendOTP(registeredEmail);
       setOtp('');
       setError('');
-      // Show success message
     } catch (err) {
       setError(err.message || 'Failed to resend OTP');
     } finally {
@@ -126,19 +124,16 @@ export default function SignupPage() {
 
       const response = await api.signup(signupData);
       
-      // Check if email verification is required
       if (response.requires_verification) {
         setRegisteredEmail(email);
         setShowOtpVerification(true);
         setError('');
-        // Don't redirect yet, show OTP verification
         return;
       }
       
-      // If tokens are returned (mobile signup), store them and redirect
       if (response.access_token) {
         localStorage.setItem('access_token', response.access_token);
-        localStorage.setItem('token', response.access_token); // Backward compatibility
+        localStorage.setItem('token', response.access_token);
         if (response.refresh_token) {
           localStorage.setItem('refresh_token', response.refresh_token);
         }
@@ -146,17 +141,19 @@ export default function SignupPage() {
           localStorage.setItem('user', JSON.stringify(response.user));
         }
         
-        // Redirect based on role
         const userData = response.user || await api.getCurrentUser();
         const roleDashboards = {
-          worker: '/dashboard/worker',
-          provider: '/dashboard/provider',
+          worker: '/worker/onboarding',
+          delivery_worker: '/worker/onboarding',
+          aeps_agent: '/worker/onboarding',
+          company: '/dashboard/company',
+          provider: '/dashboard/company',
           bank: '/dashboard/bank',
           police: '/dashboard/police',
           admin: '/dashboard/admin',
         };
         
-        router.push(roleDashboards[userData.role] || '/dashboard/worker');
+        router.push(roleDashboards[userData.role] || '/worker/onboarding');
       }
     } catch (err) {
       setError(err.message || 'Signup failed');
@@ -166,104 +163,149 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Join Jan Suraksha platform
-          </p>
+    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+      <Navbar showAuth={false} />
+      
+      <div className="flex items-center justify-center px-4 py-12 min-h-[calc(100vh-80px)]">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)]"></div>
+      <div className="absolute inset-0 opacity-20" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='monospace' font-size='14' fill='rgba(0, 255, 65, 0.15)'%3E0x4F AB 1C 9D%3C/text%3E%3C/svg%3E")`,
+        animation: 'digital-rain 20s linear infinite'
+      }}></div>
+
+      <div className="w-full max-w-md relative z-10">
+        {/* Back to home */}
+        <div className="mb-6">
+          <Link href="/" className="text-green-400 hover:text-green-300 flex items-center gap-2">
+            <span>←</span> BACK TO HOME
+          </Link>
         </div>
 
-        {showOtpVerification ? (
-          <form className="mt-8 space-y-6" onSubmit={handleVerifyOtp}>
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+        {/* Signup Box */}
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold tracking-wider text-green-400">
+              // NEW_USER_REGISTRATION
+            </h2>
+            <p className="text-gray-400 mt-2">CREATE SECURE ACCESS CREDENTIALS</p>
+          </div>
+
+          {showOtpVerification ? (
+            <form className="space-y-6" onSubmit={handleVerifyOtp}>
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-900/20 border-2 border-green-500/50 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-green-400 mb-2">VERIFY EMAIL</h3>
+                <p className="text-gray-400 text-sm">
+                  OTP SENT TO: <span className="text-green-400">{registeredEmail}</span>
+                </p>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
-              <p className="text-gray-600">
-                We've sent a 6-digit OTP code to <strong>{registeredEmail}</strong>
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Please check your inbox and enter the code below
-              </p>
-            </div>
 
-            {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
-            )}
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/50 rounded p-4">
+                  <p className="text-red-400 text-sm">✗ {error}</p>
+                </div>
+              )}
 
-            <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-900 mb-2">
-                Enter OTP Code
-              </label>
-              <input
-                id="otp"
-                name="otp"
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white text-center text-2xl tracking-widest font-mono"
-                placeholder="000000"
-                maxLength={6}
-                required
-                autoFocus
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={otpLoading || otp.length !== 6}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {otpLoading ? 'Verifying...' : 'Verify Email'}
-            </button>
-
-            <div className="text-center space-y-2">
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                disabled={otpLoading}
-                className="text-sm text-blue-600 hover:text-blue-500 disabled:opacity-50"
-              >
-                Didn't receive the code? Resend OTP
-              </button>
               <div>
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  Enter OTP Code
+                </label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded text-center text-2xl tracking-widest font-mono focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={otpLoading || otp.length !== 6}
+                className="w-full bg-green-600 text-black font-bold py-3 px-4 rounded uppercase tracking-widest hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all disabled:opacity-50"
+              >
+                {otpLoading ? '⟳ VERIFYING...' : '→ VERIFY EMAIL'}
+              </button>
+
+              <div className="text-center space-y-2 border-t border-green-900/30 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowOtpVerification(false);
-                    setOtp('');
-                    setRegisteredEmail('');
-                  }}
-                  className="text-sm text-gray-600 hover:text-gray-800"
+                  onClick={handleResendOtp}
+                  disabled={otpLoading}
+                  className="text-sm text-green-400 hover:text-green-300"
                 >
-                  ← Back to registration
+                  ↻ RESEND OTP
                 </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOtpVerification(false);
+                      setOtp('');
+                      setRegisteredEmail('');
+                    }}
+                    className="text-sm text-gray-400 hover:text-gray-300"
+                  >
+                    ← BACK TO REGISTRATION
+                  </button>
+                </div>
               </div>
-            </div>
-          </form>
-        ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleSignup}>
-            {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800">{error}</p>
-              </div>
-            )}
+            </form>
+          ) : (
+            <form className="space-y-6" onSubmit={handleSignup}>
+              {error && (
+                <div className="bg-red-900/20 border border-red-500/50 rounded p-4">
+                  <p className="text-red-400 text-sm">✗ {error}</p>
+                </div>
+              )}
 
-            <div className="space-y-4">
-            {/* Signup Method Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Signup Method
-              </label>
+              {/* Full Name */}
+              <div>
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                  placeholder="JOHN DOE"
+                />
+              </div>
+
+              {/* Role Selection */}
+              <div>
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  User Role
+                </label>
+                <select
+                  required
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                >
+                  <option value="worker">WORKER / AGENT</option>
+                  <option value="company">SERVICE PROVIDER</option>
+                  <option value="bank">BANK / AePS OPERATOR</option>
+                  <option value="police">POLICE / LAW ENFORCEMENT</option>
+                  <option value="admin">SYSTEM ADMIN</option>
+                </select>
+              </div>
+
+              {/* Signup Method */}
+              <div>
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  Signup Method
+                </label>
                 <select
                   value={signupMethod}
                   onChange={(e) => {
@@ -271,157 +313,113 @@ export default function SignupPage() {
                     setOtpSent(false);
                     setError('');
                   }}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
                 >
-                <option value="email">Email + Password</option>
-                <option value="mobile">Mobile + OTP</option>
-              </select>
-            </div>
+                  <option value="email">EMAIL + PASSWORD</option>
+                  <option value="mobile">MOBILE + OTP</option>
+                </select>
+              </div>
 
-            {/* Full Name */}
-            <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-900">
-                  Full Name
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-                />
-            </div>
-
-            {/* Role Selection */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-900">
-                I am a
-              </label>
-              <select
-                id="role"
-                name="role"
-                required
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-              >
-                <option value="worker">Worker / Agent</option>
-                <option value="provider">Service Provider</option>
-                <option value="bank">Bank / AePS Operator</option>
-                <option value="police">Police / Law Enforcement</option>
-                <option value="admin">System Admin</option>
-              </select>
-            </div>
-
-            {/* Email Field */}
-            {signupMethod === 'email' && (
-              <>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-900">
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-900">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-                    minLength={8}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    After registration, you'll receive an OTP to verify your email
-                  </p>
-                </div>
-              </>
-            )}
-
-            {/* Mobile Field */}
-            {signupMethod === 'mobile' && (
-              <>
-                <div>
-                  <label htmlFor="mobile" className="block text-sm font-medium text-gray-900">
-                    Mobile Number
-                  </label>
-                  <input
-                    id="mobile"
-                    name="mobile"
-                    type="tel"
-                    required
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-                    placeholder="+91XXXXXXXXXX"
-                  />
-                  {!otpSent && (
-                    <button
-                      type="button"
-                      onClick={handleRequestOTP}
-                      disabled={loading || !mobile}
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-500 disabled:opacity-50"
-                    >
-                      Send OTP
-                    </button>
-                  )}
-                </div>
-                {otpSent && (
+              {/* Email + Password */}
+              {signupMethod === 'email' && (
+                <>
                   <div>
-                    <label htmlFor="otp" className="block text-sm font-medium text-gray-900">
-                      OTP
+                    <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                      Email Address
                     </label>
                     <input
-                      id="otp"
-                      name="otp"
-                      type="text"
+                      type="email"
                       required
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
-                      placeholder="Enter 6-digit OTP"
-                      maxLength={6}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                      placeholder="user@domain.com"
                     />
                   </div>
-                )}
-              </>
-            )}
-            </div>
+                  <div>
+                    <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                      placeholder="••••••••"
+                      minLength={8}
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      → EMAIL VERIFICATION REQUIRED AFTER REGISTRATION
+                    </p>
+                  </div>
+                </>
+              )}
 
-            <div>
+              {/* Mobile + OTP */}
+              {signupMethod === 'mobile' && (
+                <>
+                  <div>
+                    <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                      Mobile Number
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                      placeholder="+91XXXXXXXXXX"
+                    />
+                    {!otpSent && (
+                      <button
+                        type="button"
+                        onClick={handleRequestOTP}
+                        disabled={loading || !mobile}
+                        className="mt-2 text-sm text-green-400 hover:text-green-300 border border-green-500/30 px-3 py-1 rounded"
+                      >
+                        → SEND OTP
+                      </button>
+                    )}
+                  </div>
+                  {otpSent && (
+                    <div>
+                      <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                        OTP Code
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded text-center text-2xl tracking-widest focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                        placeholder="000000"
+                        maxLength={6}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full bg-green-600 text-black font-bold py-3 px-4 rounded uppercase tracking-widest hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all disabled:opacity-50"
               >
-                {loading ? 'Creating account...' : 'Sign up'}
+                {loading ? '⟳ REGISTERING...' : '→ SIGN UP'}
               </button>
-            </div>
 
-            <div className="text-center text-sm">
-              <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
-                Already have an account? Sign in
-              </Link>
-            </div>
-          </form>
-        )}
+              <div className="text-center text-sm border-t border-green-900/30 pt-4">
+                <span className="text-gray-400">ALREADY REGISTERED? </span>
+                <Link href="/auth/login" className="text-green-400 hover:text-green-300 font-bold">
+                  LOGIN →
+                </Link>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );
 }
-

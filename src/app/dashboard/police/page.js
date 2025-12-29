@@ -2,325 +2,405 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
+import Navbar from '@/components/Navbar';
 
 export default function PoliceDashboard() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const [verificationQueue, setVerificationQueue] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [verifications, setVerifications] = useState([]);
+  const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
-    if (user?.role !== 'police') {
-      router.push('/');
-      return;
+    // Don't redirect, just show error if not police
+    if (user) {
+      fetchData();
     }
-    fetchVerificationQueue();
   }, [user]);
 
-  const fetchVerificationQueue = async () => {
+  const fetchData = async () => {
     try {
-      const data = await api.request('/police/verification-queue');
-      setVerificationQueue(data.workers || []);
+      setError('');
+      const [verificationsData, incidentsData] = await Promise.all([
+        api.get('/police/verifications/pending').catch(() => ({ verifications: [] })),
+        api.get('/police/incidents').catch(() => ({ incidents: [] }))
+      ]);
+      setVerifications(verificationsData.verifications || []);
+      setIncidents(incidentsData.incidents || []);
     } catch (error) {
-      console.error('Error fetching queue:', error);
+      console.error('Error fetching data:', error);
+      setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
+  const handleApprove = async (verificationId) => {
     try {
-      const data = await api.searchAgent(searchQuery);
-      setSearchResults(data.workers || []);
-    } catch (error) {
-      alert(error.message || 'Search failed');
-    }
-  };
-
-  const handleViewDetails = async (workerId) => {
-    try {
-      const data = await api.getAgentDetails(workerId);
-      setSelectedWorker(data);
-    } catch (error) {
-      alert(error.message || 'Failed to load worker details');
-    }
-  };
-
-  const handleVerify = async (workerId, status) => {
-    const certificate = prompt('Enter certificate number (optional):');
-    const remarks = prompt('Enter remarks:');
-
-    try {
-      await api.createPoliceVerification({
-        worker_id: workerId,
-        status,
-        certificate_number: certificate || null,
-        remarks: remarks || null
+      await api.request(`/police/verifications/${verificationId}/approve`, {
+        method: 'POST'
       });
-      alert('Verification completed!');
-      setSelectedWorker(null);
-      fetchVerificationQueue();
+      fetchData();
     } catch (error) {
-      alert(error.message || 'Verification failed');
+      alert(error.message || 'Failed to approve verification');
     }
   };
 
-  const handleSuspend = async (workerId) => {
-    const reason = prompt('Enter reason for suspension:');
+  const handleReject = async (verificationId) => {
+    const reason = prompt('Enter rejection reason:');
     if (!reason) return;
-
-    const temporary = confirm('Temporary suspension? (OK = Yes, Cancel = Permanent)');
-
+    
     try {
-      await api.suspendAgent(workerId, reason, temporary);
-      alert('Worker suspended successfully');
-      fetchVerificationQueue();
+      await api.request(`/police/verifications/${verificationId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      });
+      fetchData();
     } catch (error) {
-      alert(error.message || 'Failed to suspend worker');
+      alert(error.message || 'Failed to reject verification');
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/auth/login');
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-black text-white font-mono flex items-center justify-center">
+        <div className="text-green-400 text-xl">⟳ LOADING DASHBOARD...</div>
       </div>
     );
   }
 
+  // Check if user has police role
+  if (user && user.role !== 'police') {
+    return (
+      <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+        <Navbar showAuth={true} user={user} onLogout={handleLogout} />
+        
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="max-w-md text-center">
+            <div className="bg-red-900/20 border-2 border-red-500/50 rounded-lg p-8">
+              <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h2 className="text-2xl font-bold text-red-400 mb-2">ACCESS DENIED</h2>
+              <p className="text-gray-400 mb-4">
+                This dashboard is only accessible to police officers.
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Your role: <span className="text-red-400 font-bold uppercase">{user.role}</span>
+              </p>
+              <button
+                onClick={() => router.push('/')}
+                className="bg-green-600 text-black font-bold py-2 px-6 rounded hover:bg-green-500 transition-all"
+              >
+                GO TO HOME
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const pendingCount = verifications.filter(v => v.status === 'pending').length;
+  const approvedCount = verifications.filter(v => v.status === 'approved').length;
+  const rejectedCount = verifications.filter(v => v.status === 'rejected').length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-blue-600">Jan Suraksha - Police Portal</h1>
+    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+      <Navbar showAuth={true} user={user} onLogout={handleLogout} />
+      
+      {/* Error Message */}
+      {error && (
+        <div className="relative z-50 bg-red-900/20 border-b-2 border-red-500/50 py-4">
+          <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="text-red-400 text-2xl">✗</div>
+              <div>
+                <p className="text-red-400 font-bold">ERROR</p>
+                <p className="text-gray-400 text-sm">{error}</p>
+              </div>
+            </div>
             <button
-              onClick={logout}
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+              onClick={fetchData}
+              className="bg-red-600 text-white font-bold py-2 px-6 rounded hover:bg-red-500 transition-all"
             >
-              Logout
+              RETRY
             </button>
           </div>
         </div>
-      </nav>
+      )}
+      
+      
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)]"></div>
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='monospace' font-size='14' fill='rgba(0, 255, 65, 0.15)'%3E0x4F AB 1C 9D%3C/text%3E%3C/svg%3E")`,
+        animation: 'digital-rain 20s linear infinite'
+      }}></div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Police Dashboard</h2>
-          <p className="text-gray-600 mt-2">Officer: {user?.full_name}</p>
+      {/* Page Header */}
+      <div className="relative z-10 border-b border-green-500/30 bg-black/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-green-400">// POLICE_DASHBOARD</h1>
+            <p className="text-xs text-gray-400 mt-1">LAW ENFORCEMENT VERIFICATION SYSTEM</p>
+          </div>
+          <Link
+            href="/dashboard/police/search"
+            className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
+          >
+            SEARCH AGENT
+          </Link>
         </div>
+      </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Search Workers</h3>
-          <form onSubmit={handleSearch} className="flex gap-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Worker ID, Name, or Mobile"
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2"
-            />
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-            >
-              Search
-            </button>
-          </form>
-
-          {/* Search Results */}
-          {searchResults.length > 0 && (
-            <div className="mt-4 border-t pt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Search Results:</h4>
-              <div className="space-y-2">
-                {searchResults.map((worker) => (
-                  <div
-                    key={worker.id}
-                    className="flex justify-between items-center p-3 bg-gray-50 rounded-md"
-                  >
-                    <div>
-                      <p className="font-medium">{worker.full_name}</p>
-                      <p className="text-sm text-gray-600">{worker.worker_id}</p>
-                    </div>
-                    <button
-                      onClick={() => handleViewDetails(worker.worker_id)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Verification Queue */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Verification Queue ({verificationQueue.length})
-          </h3>
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+        
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           
-          {verificationQueue.length === 0 ? (
-            <p className="text-gray-600 text-center py-8">No pending verifications</p>
-          ) : (
-            <div className="space-y-3">
-              {verificationQueue.map((worker) => (
-                <div
-                  key={worker.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{worker.full_name}</h4>
-                      <p className="text-sm text-gray-600 font-mono">{worker.worker_id}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Category: <span className="capitalize">{worker.category?.replace('_', ' ')}</span>
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Location: {worker.city}, {worker.state}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Submitted: {new Date(worker.submitted_at).toLocaleDateString()}
-                      </p>
+          <div className="p-6 rounded-lg border-2 border-yellow-500/50 bg-yellow-900/10">
+            <div className="text-xs text-gray-400 mb-2">PENDING</div>
+            <div className="text-4xl font-bold text-yellow-400">{pendingCount}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">APPROVED</div>
+            <div className="text-4xl font-bold text-green-400">{approvedCount}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-red-500/50 bg-red-900/10">
+            <div className="text-xs text-gray-400 mb-2">REJECTED</div>
+            <div className="text-4xl font-bold text-red-400">{rejectedCount}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-red-500/50 bg-red-900/10">
+            <div className="text-xs text-gray-400 mb-2">INCIDENTS</div>
+            <div className="text-4xl font-bold text-red-400">{incidents.length}</div>
+            <div className="text-xs text-gray-400 mt-2">REPORTED</div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="flex gap-2 border-b border-green-900/30">
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`px-6 py-3 font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'pending'
+                  ? 'text-green-400 border-b-2 border-green-500'
+                  : 'text-gray-400 hover:text-green-400'
+              }`}
+            >
+              PENDING ({pendingCount})
+            </button>
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-6 py-3 font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'all'
+                  ? 'text-green-400 border-b-2 border-green-500'
+                  : 'text-gray-400 hover:text-green-400'
+              }`}
+            >
+              ALL VERIFICATIONS
+            </button>
+            <button
+              onClick={() => setActiveTab('incidents')}
+              className={`px-6 py-3 font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'incidents'
+                  ? 'text-green-400 border-b-2 border-green-500'
+                  : 'text-gray-400 hover:text-green-400'
+              }`}
+            >
+              INCIDENTS
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+          
+          {/* Pending Tab */}
+          {activeTab === 'pending' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-green-400 mb-6">PENDING VERIFICATIONS</h2>
+              
+              {verifications.filter(v => v.status === 'pending').length > 0 ? (
+                <div className="space-y-4">
+                  {verifications.filter(v => v.status === 'pending').map((verification, idx) => (
+                    <div key={idx} className="bg-yellow-900/10 border border-yellow-500/30 rounded-lg p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-2">{verification.worker?.full_name || 'N/A'}</h3>
+                          <div className="text-sm space-y-1">
+                            <div>
+                              <span className="text-gray-400">Worker ID:</span>
+                              <span className="text-white ml-2 font-mono">{verification.worker_id}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Mobile:</span>
+                              <span className="text-white ml-2">{verification.worker?.mobile || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Category:</span>
+                              <span className="text-white ml-2 uppercase">{verification.worker?.category || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Submitted:</span>
+                              <span className="text-white ml-2">{new Date(verification.created_at).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-xs text-yellow-400 bg-yellow-900/20 px-3 py-1 rounded border border-yellow-500/50">
+                          PENDING
+                        </div>
+                      </div>
+                      <div className="flex gap-4 mt-4 pt-4 border-t border-yellow-900/30">
+                        <button
+                          onClick={() => handleApprove(verification.id)}
+                          className="flex-1 bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all"
+                        >
+                          ✓ APPROVE
+                        </button>
+                        <button
+                          onClick={() => handleReject(verification.id)}
+                          className="flex-1 bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.8)] transition-all"
+                        >
+                          ✗ REJECT
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleViewDetails(worker.worker_id)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
-                    >
-                      Review
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p>NO PENDING VERIFICATIONS</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* All Verifications Tab */}
+          {activeTab === 'all' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-green-400 mb-6">ALL VERIFICATIONS</h2>
+              
+              {verifications.length > 0 ? (
+                <div className="space-y-4">
+                  {verifications.map((verification, idx) => (
+                    <div key={idx} className={`border rounded-lg p-6 ${
+                      verification.status === 'approved' ? 'bg-green-900/10 border-green-500/30' :
+                      verification.status === 'rejected' ? 'bg-red-900/10 border-red-500/30' :
+                      'bg-yellow-900/10 border-yellow-500/30'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-2">{verification.worker?.full_name || 'N/A'}</h3>
+                          <div className="text-sm space-y-1">
+                            <div>
+                              <span className="text-gray-400">Worker ID:</span>
+                              <span className="text-white ml-2 font-mono">{verification.worker_id}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Status:</span>
+                              <span className={`ml-2 font-bold uppercase ${
+                                verification.status === 'approved' ? 'text-green-400' :
+                                verification.status === 'rejected' ? 'text-red-400' :
+                                'text-yellow-400'
+                              }`}>{verification.status}</span>
+                            </div>
+                            {verification.rejection_reason && (
+                              <div>
+                                <span className="text-gray-400">Reason:</span>
+                                <span className="text-red-400 ml-2">{verification.rejection_reason}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className={`text-xs px-3 py-1 rounded border ${
+                          verification.status === 'approved' ? 'text-green-400 bg-green-900/20 border-green-500/50' :
+                          verification.status === 'rejected' ? 'text-red-400 bg-red-900/20 border-red-500/50' :
+                          'text-yellow-400 bg-yellow-900/20 border-yellow-500/50'
+                        }`}>
+                          {verification.status?.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <p>NO VERIFICATIONS FOUND</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Incidents Tab */}
+          {activeTab === 'incidents' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-green-400 mb-6">REPORTED INCIDENTS</h2>
+              
+              {incidents.length > 0 ? (
+                <div className="space-y-4">
+                  {incidents.map((incident, idx) => (
+                    <div key={idx} className="bg-red-900/10 border border-red-500/30 rounded-lg p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-red-400 mb-2">{incident.incident_type}</h3>
+                          <div className="text-sm space-y-1">
+                            <div>
+                              <span className="text-gray-400">Worker:</span>
+                              <span className="text-white ml-2">{incident.worker?.full_name || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Date:</span>
+                              <span className="text-white ml-2">{new Date(incident.incident_date).toLocaleString()}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Location:</span>
+                              <span className="text-white ml-2">{incident.incident_location || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-xs text-red-400 bg-red-900/20 px-3 py-1 rounded border border-red-500/50">
+                          INCIDENT
+                        </div>
+                      </div>
+                      <div className="border-t border-red-900/30 pt-4 mt-4">
+                        <p className="text-gray-300">{incident.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p>NO INCIDENTS REPORTED</p>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Worker Details Modal */}
-        {selectedWorker && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{selectedWorker.user?.full_name}</h3>
-                    <p className="text-gray-600 font-mono">{selectedWorker.worker_id}</p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedWorker(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6">
-                {/* Photo */}
-                {selectedWorker.selfie_url && (
-                  <div className="mb-6">
-                    <img
-                      src={selectedWorker.selfie_url}
-                      alt="Worker Photo"
-                      className="w-48 h-48 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                  </div>
-                )}
-
-                {/* Details */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600">Category</h4>
-                    <p className="mt-1 capitalize">{selectedWorker.category?.replace('_', ' ')}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600">Mobile</h4>
-                    <p className="mt-1">{selectedWorker.user?.mobile}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600">Email</h4>
-                    <p className="mt-1">{selectedWorker.user?.email || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-600">Aadhaar Reference</h4>
-                    <p className="mt-1 font-mono text-sm">{selectedWorker.aadhaar_reference}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <h4 className="text-sm font-medium text-gray-600">Address</h4>
-                    <p className="mt-1">
-                      {selectedWorker.address}, {selectedWorker.city}, {selectedWorker.state} - {selectedWorker.pincode}
-                    </p>
-                  </div>
-                </div>
-
-                {/* AePS Details */}
-                {selectedWorker.category === 'aeps_agent' && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">AePS Information</h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-gray-600">Bank:</span> {selectedWorker.bank_affiliation}
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Operator ID:</span> {selectedWorker.aeps_operator_id}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Risk Info */}
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Risk Score</h4>
-                      <p className="text-2xl font-bold text-gray-900">{selectedWorker.risk_score}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-600">Complaints</h4>
-                      <p className="text-2xl font-bold text-gray-900">{selectedWorker.complaint_count}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleVerify(selectedWorker.id, 'verified')}
-                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                  >
-                    Verify
-                  </button>
-                  <button
-                    onClick={() => handleVerify(selectedWorker.id, 'rejected')}
-                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleSuspend(selectedWorker.worker_id)}
-                    className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700"
-                  >
-                    Suspend
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

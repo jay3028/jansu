@@ -2,17 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
+import Navbar from '@/components/Navbar';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [workers, setWorkers] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,351 +18,272 @@ export default function AdminDashboard() {
       router.push('/');
       return;
     }
-    fetchData();
+    fetchStats();
   }, [user]);
 
-  const fetchData = async () => {
+  const fetchStats = async () => {
     try {
-      const [statsData, usersData, workersData, companiesData] = await Promise.all([
-        api.getAdminDashboard(),
-        api.listUsers(),
-        api.request('/admin/workers'),
-        api.request('/admin/companies')
-      ]);
-      
-      setStats(statsData);
-      setUsers(usersData.users || []);
-      setWorkers(workersData.workers || []);
-      setCompanies(companiesData.companies || []);
+      const response = await api.get('/admin/stats');
+      setStats(response);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSuspendUser = async (userId) => {
-    const reason = prompt('Enter reason for suspension:');
-    if (!reason) return;
-
-    try {
-      await api.suspendUser(userId, reason);
-      alert('User suspended successfully');
-      fetchData();
-    } catch (error) {
-      alert(error.message || 'Failed to suspend user');
-    }
-  };
-
-  const handleActivateUser = async (userId) => {
-    try {
-      await api.activateUser(userId);
-      alert('User activated successfully');
-      fetchData();
-    } catch (error) {
-      alert(error.message || 'Failed to activate user');
-    }
-  };
-
-  const handleApproveCompany = async (companyId) => {
-    try {
-      await api.request(`/admin/companies/${companyId}/approve`, { method: 'POST' });
-      alert('Company approved successfully');
-      fetchData();
-    } catch (error) {
-      alert(error.message || 'Failed to approve company');
-    }
+  const handleLogout = () => {
+    logout();
+    router.push('/auth/login');
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-black text-white font-mono flex items-center justify-center">
+        <div className="text-green-400 text-xl">⟳ LOADING DASHBOARD...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-blue-600">Jan Suraksha - Admin</h1>
-            <button
-              onClick={logout}
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+      <Navbar showAuth={true} user={user} onLogout={handleLogout} />
+      
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)]"></div>
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='monospace' font-size='14' fill='rgba(0, 255, 65, 0.15)'%3E0x4F AB 1C 9D%3C/text%3E%3C/svg%3E")`,
+        animation: 'digital-rain 20s linear infinite'
+      }}></div>
+
+      {/* Page Header */}
+      <div className="relative z-10 border-b border-green-500/30 bg-black/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-green-400">// ADMIN_DASHBOARD</h1>
+            <p className="text-xs text-gray-400 mt-1">SYSTEM ADMINISTRATION CONTROL PANEL</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/admin/users"
+              className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
             >
-              Logout
+              MANAGE USERS
+            </Link>
+            <Link
+              href="/dashboard/admin/audit"
+              className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
+            >
+              AUDIT LOGS
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">TOTAL USERS</div>
+            <div className="text-4xl font-bold text-green-400">{stats?.total_users || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">REGISTERED</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">WORKERS</div>
+            <div className="text-4xl font-bold text-green-400">{stats?.total_workers || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">ONBOARDED</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">COMPANIES</div>
+            <div className="text-4xl font-bold text-green-400">{stats?.total_companies || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">REGISTERED</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-yellow-500/50 bg-yellow-900/10">
+            <div className="text-xs text-gray-400 mb-2">PENDING</div>
+            <div className="text-4xl font-bold text-yellow-400">{stats?.pending_verifications || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">APPROVED</div>
+            <div className="text-4xl font-bold text-green-400">{stats?.approved_verifications || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-red-500/50 bg-red-900/10">
+            <div className="text-xs text-gray-400 mb-2">REJECTED</div>
+            <div className="text-4xl font-bold text-red-400">{stats?.rejected_verifications || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">VERIFICATIONS</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-red-500/50 bg-red-900/10">
+            <div className="text-xs text-gray-400 mb-2">INCIDENTS</div>
+            <div className="text-4xl font-bold text-red-400">{stats?.total_incidents || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">REPORTED</div>
+          </div>
+
+          <div className="p-6 rounded-lg border-2 border-green-500/50 bg-green-900/10">
+            <div className="text-xs text-gray-400 mb-2">COMPLAINTS</div>
+            <div className="text-4xl font-bold text-green-400">{stats?.total_complaints || 0}</div>
+            <div className="text-xs text-gray-400 mt-2">FILED</div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)] mb-8">
+          <h2 className="text-2xl font-bold text-green-400 mb-6">QUICK ACTIONS</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <Link
+              href="/dashboard/admin/users"
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">MANAGE USERS</h3>
+                  <p className="text-xs text-gray-400 mt-1">View and manage all users</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/dashboard/admin/audit"
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">AUDIT LOGS</h3>
+                  <p className="text-xs text-gray-400 mt-1">View system audit trail</p>
+                </div>
+              </div>
+            </Link>
+
+            <button
+              onClick={() => alert('Feature coming soon!')}
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">SYSTEM SETTINGS</h3>
+                  <p className="text-xs text-gray-400 mt-1">Configure system parameters</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => alert('Feature coming soon!')}
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">REPORTS</h3>
+                  <p className="text-xs text-gray-400 mt-1">Generate system reports</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => alert('Feature coming soon!')}
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">COMPANIES</h3>
+                  <p className="text-xs text-gray-400 mt-1">Manage service providers</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => alert('Feature coming soon!')}
+              className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 hover:border-green-500/50 transition-all group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <svg className="w-12 h-12 text-green-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <h3 className="text-lg font-bold text-white">INCIDENTS</h3>
+                  <p className="text-xs text-gray-400 mt-1">Review reported incidents</p>
+                </div>
+              </div>
             </button>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
-          <p className="text-gray-600 mt-2">System Administrator</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="flex gap-8">
-            {['overview', 'users', 'workers', 'companies'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm capitalize ${
-                  activeTab === tab
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Overview Tab */}
-        {activeTab === 'overview' && stats && (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Total Workers</h3>
-                <p className="text-3xl font-bold text-gray-900">{stats.total_workers}</p>
+        {/* System Status */}
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+          <h2 className="text-2xl font-bold text-green-400 mb-6">SYSTEM STATUS</h2>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-4 bg-green-900/10 border border-green-500/30 rounded">
+              <div>
+                <h3 className="text-white font-bold">DATABASE</h3>
+                <p className="text-xs text-gray-400 mt-1">MySQL Connection</p>
               </div>
-              
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Active Workers</h3>
-                <p className="text-3xl font-bold text-green-600">{stats.active_workers}</p>
-              </div>
-              
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Verifications</h3>
-                <p className="text-3xl font-bold text-yellow-600">{stats.pending_verifications}</p>
-              </div>
-              
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Total Complaints</h3>
-                <p className="text-3xl font-bold text-red-600">{stats.total_complaints}</p>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+                <span className="text-green-400 font-bold">ONLINE</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">API Status</span>
-                    <span className="text-green-600 font-semibold">Operational</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Database</span>
-                    <span className="text-green-600 font-semibold">Connected</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">High Risk Workers</span>
-                    <span className="text-red-600 font-semibold">{stats.high_risk_workers}</span>
-                  </div>
-                </div>
+            <div className="flex justify-between items-center p-4 bg-green-900/10 border border-green-500/30 rounded">
+              <div>
+                <h3 className="text-white font-bold">API SERVER</h3>
+                <p className="text-xs text-gray-400 mt-1">FastAPI Backend</p>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+                <span className="text-green-400 font-bold">ONLINE</span>
+              </div>
+            </div>
 
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <p className="text-gray-600 text-sm">
-                  System logs and activity monitoring available in audit logs section.
-                </p>
+            <div className="flex justify-between items-center p-4 bg-green-900/10 border border-green-500/30 rounded">
+              <div>
+                <h3 className="text-white font-bold">AWS REKOGNITION</h3>
+                <p className="text-xs text-gray-400 mt-1">Face Verification Service</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+                <span className="text-green-400 font-bold">ONLINE</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center p-4 bg-green-900/10 border border-green-500/30 rounded">
+              <div>
+                <h3 className="text-white font-bold">EMAIL SERVICE</h3>
+                <p className="text-xs text-gray-400 mt-1">SMTP / OTP Delivery</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+                <span className="text-green-400 font-bold">ONLINE</span>
               </div>
             </div>
           </div>
-        )}
-
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.full_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                      {user.role}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {user.is_active ? 'Active' : 'Suspended'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {user.is_active ? (
-                        <button
-                          onClick={() => handleSuspendUser(user.id)}
-                          className="text-red-600 hover:text-red-700 font-medium"
-                        >
-                          Suspend
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleActivateUser(user.id)}
-                          className="text-green-600 hover:text-green-700 font-medium"
-                        >
-                          Activate
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Workers Tab */}
-        {activeTab === 'workers' && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Worker ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Risk Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Created
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {workers.map((worker) => (
-                  <tr key={worker.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                      {worker.worker_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {worker.full_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                      {worker.category?.replace('_', ' ')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        worker.status === 'active' ? 'bg-green-100 text-green-800' :
-                        worker.status === 'pending_verification' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {worker.status?.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {worker.risk_score}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {new Date(worker.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Companies Tab */}
-        {activeTab === 'companies' && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Company Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    CIN
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {companies.map((company) => (
-                  <tr key={company.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {company.company_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {company.cin || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        company.is_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {company.is_approved ? 'Approved' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {new Date(company.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {!company.is_approved && (
-                        <button
-                          onClick={() => handleApproveCompany(company.id)}
-                          className="text-green-600 hover:text-green-700 font-medium"
-                        >
-                          Approve
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

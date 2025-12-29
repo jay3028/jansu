@@ -1,6 +1,3 @@
-/**
- * Login page - supports email/password and mobile/OTP
- */
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/services/api';
+import Navbar from '@/components/Navbar';
 
 export default function LoginPage() {
-  const [loginMethod, setLoginMethod] = useState('email_password'); // email_password, mobile_otp, mobile_password
+  const [loginMethod, setLoginMethod] = useState('email_password');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -58,11 +56,11 @@ export default function LoginPage() {
 
       const response = await api.login(loginData);
       
-      // Store tokens (support both access_token and token for backward compatibility)
+      // Store tokens
       const token = response.access_token || response.token;
       if (token) {
         localStorage.setItem('access_token', token);
-        localStorage.setItem('token', token); // Backward compatibility
+        localStorage.setItem('token', token);
         if (response.refresh_token) {
           localStorage.setItem('refresh_token', response.refresh_token);
         }
@@ -73,16 +71,40 @@ export default function LoginPage() {
       
       // Redirect based on role
       const userData = response.user || await api.getCurrentUser();
+      console.log('Login successful, user:', userData);
+      
+      // Check if worker needs onboarding
+      if (userData.role === 'worker') {
+        try {
+          const workerData = await api.getMyWorker();
+          console.log('Worker data:', workerData);
+          
+          // If no worker_id, redirect to onboarding
+          if (!workerData.worker_id) {
+            console.log('Worker not onboarded, redirecting to onboarding');
+            router.push('/worker/onboarding');
+            return;
+          }
+        } catch (err) {
+          console.log('No worker profile, redirecting to onboarding');
+          router.push('/worker/onboarding');
+          return;
+        }
+      }
+      
       const roleDashboards = {
         citizen: '/dashboard/citizen',
         worker: '/dashboard/worker',
-        provider: '/dashboard/provider',
+        delivery_worker: '/dashboard/worker',
+        aeps_agent: '/dashboard/worker',
+        company: '/dashboard/company',
+        provider: '/dashboard/company',
         bank: '/dashboard/bank',
         police: '/dashboard/police',
         admin: '/dashboard/admin',
       };
       
-      router.push(roleDashboards[userData.role] || '/dashboard/citizen');
+      router.push(roleDashboards[userData.role] || '/dashboard/worker');
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {
@@ -91,28 +113,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Jan Suraksha
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
-          </p>
+    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+      <Navbar showAuth={false} />
+      
+      <div className="flex items-center justify-center px-4 py-12 min-h-[calc(100vh-80px)]">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)]"></div>
+      <div className="absolute inset-0 opacity-20" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='monospace' font-size='14' fill='rgba(0, 255, 65, 0.15)'%3E0x4F AB 1C 9D%3C/text%3E%3C/svg%3E")`,
+        animation: 'digital-rain 20s linear infinite'
+      }}></div>
+
+      <div className="w-full max-w-md relative z-10">
+        {/* Back to home */}
+        <div className="mb-6">
+          <Link href="/" className="text-green-400 hover:text-green-300 flex items-center gap-2">
+            <span>←</span> BACK TO HOME
+          </Link>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
+        {/* Login Box */}
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold tracking-wider text-green-400">
+              // ACCESS_LOGIN
+            </h2>
+            <p className="text-gray-400 mt-2">AUTHENTICATE TO ENTER SYSTEM</p>
+          </div>
 
-          <div className="space-y-4">
+          <form className="space-y-6" onSubmit={handleLogin}>
+            {error && (
+              <div className="bg-red-900/20 border border-red-500/50 rounded p-4">
+                <p className="text-red-400 text-sm">✗ {error}</p>
+              </div>
+            )}
+
             {/* Login Method Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
                 Login Method
               </label>
               <select
@@ -122,28 +160,27 @@ export default function LoginPage() {
                   setOtpSent(false);
                   setError('');
                 }}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
               >
-                <option value="email_password">Email + Password</option>
-                <option value="mobile_password">Mobile + Password</option>
-                <option value="mobile_otp">Mobile + OTP</option>
+                <option value="email_password">EMAIL + PASSWORD</option>
+                <option value="mobile_password">MOBILE + PASSWORD</option>
+                <option value="mobile_otp">MOBILE + OTP</option>
               </select>
             </div>
 
             {/* Email Field */}
             {loginMethod === 'email_password' && (
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email address
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  Email Address
                 </label>
                 <input
-                  id="email"
-                  name="email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                  placeholder="user@domain.com"
                 />
               </div>
             )}
@@ -151,17 +188,15 @@ export default function LoginPage() {
             {/* Mobile Field */}
             {(loginMethod === 'mobile_otp' || loginMethod === 'mobile_password') && (
               <div>
-                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700">
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
                   Mobile Number
                 </label>
                 <input
-                  id="mobile"
-                  name="mobile"
                   type="tel"
                   required
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
                   placeholder="+91XXXXXXXXXX"
                 />
                 {loginMethod === 'mobile_otp' && !otpSent && (
@@ -169,9 +204,9 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleRequestOTP}
                     disabled={loading || !mobile}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-500"
+                    className="mt-2 text-sm text-green-400 hover:text-green-300 border border-green-500/30 px-3 py-1 rounded"
                   >
-                    Send OTP
+                    → SEND OTP
                   </button>
                 )}
               </div>
@@ -180,17 +215,16 @@ export default function LoginPage() {
             {/* Password Field */}
             {(loginMethod === 'email_password' || loginMethod === 'mobile_password') && (
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
                   Password
                 </label>
                 <input
-                  id="password"
-                  name="password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                  placeholder="••••••••"
                 />
               </div>
             )}
@@ -198,42 +232,39 @@ export default function LoginPage() {
             {/* OTP Field */}
             {loginMethod === 'mobile_otp' && otpSent && (
               <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
-                  OTP
+                <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                  OTP Code
                 </label>
                 <input
-                  id="otp"
-                  name="otp"
                   type="text"
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Enter 6-digit OTP"
+                  className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)] text-center tracking-widest text-2xl"
+                  placeholder="000000"
                   maxLength={6}
                 />
               </div>
             )}
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full bg-green-600 text-black font-bold py-3 px-4 rounded uppercase tracking-widest hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? '⟳ AUTHENTICATING...' : '→ LOGIN'}
             </button>
-          </div>
 
-          <div className="text-center text-sm">
-            <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
-              Don't have an account? Sign up
-            </Link>
-          </div>
-        </form>
+            <div className="text-center text-sm border-t border-green-900/30 pt-4">
+              <span className="text-gray-400">NEW USER? </span>
+              <Link href="/auth/signup" className="text-green-400 hover:text-green-300 font-bold">
+                REGISTER →
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
       </div>
     </div>
   );
 }
-

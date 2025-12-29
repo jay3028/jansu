@@ -93,7 +93,7 @@ class ApiService {
     } else {
       body.mobile = identifier;
     }
-    return this.request('/auth/request-otp', {
+    return this.request('/api/auth/request-otp', {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -103,35 +103,35 @@ class ApiService {
     const body = { otp, purpose };
     if (email) body.email = email;
     if (mobile) body.mobile = mobile;
-    return this.request('/auth/verify-otp', {
+    return this.request('/api/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
   async resendOTP(email) {
-    return this.request('/auth/resend-otp', {
+    return this.request('/api/auth/resend-otp', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
   async signup(userData) {
-    return this.request('/auth/signup', {
+    return this.request('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
   async login(loginData) {
-    return this.request('/auth/login', {
+    return this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(loginData),
     });
   }
 
   async refreshToken(refreshToken) {
-    return this.request('/auth/refresh', {
+    return this.request('/api/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
@@ -168,59 +168,59 @@ class ApiService {
 
   // User endpoints
   async getCurrentUser() {
-    return this.request('/users/me');
+    return this.request('/api/auth/me');
   }
 
   async updateUser(userData) {
-    return this.request('/users/me', {
+    return this.request('/api/users/me', {
       method: 'PUT',
       body: JSON.stringify(userData),
     });
   }
 
-  // Provider endpoints
+  // Provider/Company endpoints
   async registerProvider(providerData) {
-    return this.request('/providers/register', {
+    return this.request('/api/companies/register', {
       method: 'POST',
       body: JSON.stringify(providerData),
     });
   }
 
   async getMyProvider() {
-    return this.request('/providers/me');
+    return this.request('/api/companies/me');
   }
 
   async updateProvider(providerData) {
-    return this.request('/providers/me', {
+    return this.request('/api/companies/me', {
       method: 'PUT',
       body: JSON.stringify(providerData),
     });
   }
 
   async getMyWorkers() {
-    return this.request('/providers/workers');
+    return this.request('/api/companies/workers');
   }
 
   async suspendWorker(workerId) {
-    return this.request(`/providers/workers/${workerId}/suspend`, {
+    return this.request(`/api/companies/workers/${workerId}/suspend`, {
       method: 'POST',
     });
   }
 
   // Worker endpoints
   async onboardWorker(workerData) {
-    return this.request('/workers/onboard', {
+    return this.request('/api/workers/onboard', {
       method: 'POST',
       body: JSON.stringify(workerData),
     });
   }
 
   async getMyWorker() {
-    return this.request('/workers/me');
+    return this.request('/api/workers/me');
   }
 
   async updateWorker(workerData) {
-    return this.request('/workers/me', {
+    return this.request('/api/workers/me', {
       method: 'PUT',
       body: JSON.stringify(workerData),
     });
@@ -228,14 +228,14 @@ class ApiService {
 
   // Verification endpoints
   async verifyAgent(verificationData) {
-    return this.request('/verify/agent', {
+    return this.request('/api/verify/worker', {
       method: 'POST',
       body: JSON.stringify(verificationData),
     });
   }
 
   async verifyAePSIntent(transactionType, amount, agentId) {
-    return this.request('/verify/aeps/intent', {
+    return this.request('/api/verify/aeps/intent', {
       method: 'POST',
       body: JSON.stringify({
         transaction_type: transactionType,
@@ -246,7 +246,7 @@ class ApiService {
   }
 
   async confirmAePSTransaction(intentKey, actualTransactionType, actualAmount) {
-    return this.request('/verify/aeps/confirm', {
+    return this.request('/api/verify/aeps/confirm', {
       method: 'POST',
       body: JSON.stringify({
         intent_key: intentKey,
@@ -258,22 +258,22 @@ class ApiService {
 
   // Police endpoints
   async searchAgent(query) {
-    return this.request(`/police/search?q=${encodeURIComponent(query)}`);
+    return this.request(`/api/police/workers/search?q=${encodeURIComponent(query)}`);
   }
 
   async getAgentDetails(workerId) {
-    return this.request(`/police/agent/${workerId}`);
+    return this.request(`/api/police/workers/${workerId}`);
   }
 
   async createPoliceVerification(verificationData) {
-    return this.request('/police/verify', {
+    return this.request('/api/police/verify', {
       method: 'POST',
       body: JSON.stringify(verificationData),
     });
   }
 
   async suspendAgent(workerId, reason, temporary = true) {
-    return this.request('/police/suspend', {
+    return this.request('/api/police/suspend', {
       method: 'POST',
       body: JSON.stringify({
         worker_id: workerId,
@@ -284,7 +284,7 @@ class ApiService {
   }
 
   async logIncident(workerId, title, description, incidentType, severity) {
-    return this.request('/police/incident', {
+    return this.request('/api/police/incident', {
       method: 'POST',
       body: JSON.stringify({
         worker_id: workerId,
@@ -298,30 +298,30 @@ class ApiService {
 
   // Admin endpoints
   async getAdminDashboard() {
-    return this.request('/admin/dashboard');
+    return this.request('/api/admin/dashboard');
   }
 
   async listUsers(skip = 0, limit = 100, role = null) {
     const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() });
     if (role) params.append('role', role);
-    return this.request(`/admin/users?${params.toString()}`);
+    return this.request(`/api/admin/users?${params.toString()}`);
   }
 
   async suspendUser(userId, reason) {
-    return this.request(`/admin/users/${userId}/suspend`, {
+    return this.request(`/api/admin/users/${userId}/suspend`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
   }
 
   async activateUser(userId) {
-    return this.request(`/admin/users/${userId}/activate`, {
+    return this.request(`/api/admin/users/${userId}/activate`, {
       method: 'POST',
     });
   }
 
   async updateWorkerStatus(workerId, status, reason) {
-    return this.request('/admin/workers/status', {
+    return this.request('/api/admin/workers/status', {
       method: 'POST',
       body: JSON.stringify({
         worker_id: workerId,
@@ -332,7 +332,20 @@ class ApiService {
   }
 
   async getAuditLogs(skip = 0, limit = 100) {
-    return this.request(`/admin/audit-logs?skip=${skip}&limit=${limit}`);
+    return this.request(`/api/admin/audit-logs?skip=${skip}&limit=${limit}`);
+  }
+
+  // Helper method for generic GET requests
+  async get(endpoint) {
+    return this.request(`/api${endpoint}`);
+  }
+
+  // Helper method for generic POST requests
+  async post(endpoint, data) {
+    return this.request(`/api${endpoint}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 

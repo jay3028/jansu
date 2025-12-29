@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import Navbar from './Navbar';
 
 // --- CUSTOM CSS ANIMATIONS & STYLES ---
 const customStyles = `
@@ -203,9 +205,10 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [terminalLogs]);
+  // Removed auto-scroll to prevent page jumping
+  // useEffect(() => {
+  //   logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [terminalLogs]);
 
   return (
     <div className="relative min-h-screen bg-black text-white overflow-hidden font-mono selection:bg-green-900 selection:text-green-100">
@@ -218,15 +221,7 @@ const Hero = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)] z-0"></div>
 
       {/* --- NAVBAR --- */}
-      <nav className="relative z-50 flex justify-between items-center p-6 max-w-7xl mx-auto border-b border-green-900/50 backdrop-blur-md bg-black/30">
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e] rounded-full neon-glow"></div>
-          <span className="text-lg font-bold tracking-widest text-white">NET<span className="text-green-500">RUNNER</span>_SEC</span>
-        </div>
-        <div className="text-xs text-green-600/70 hidden md:block font-mono">
-          // SYSTEM.TIME: {new Date().toLocaleTimeString()} //
-        </div>
-      </nav>
+      <Navbar showAuth={true} />
 
       {/* --- MAIN HERO CONTENT --- */}
       <div className="relative z-20 max-w-7xl mx-auto px-6 pt-16 pb-32 lg:pt-32 flex flex-col lg:flex-row items-center lg:items-start justify-between gap-16 h-full">

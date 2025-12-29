@@ -1,155 +1,205 @@
-/**
- * Police Agent Search Page
- */
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Layout from '@/components/Layout';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import api from '@/services/api';
 import Link from 'next/link';
+import api from '@/services/api';
+import Navbar from '@/components/Navbar';
 
 export default function PoliceSearchPage() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const router = useRouter();
+  const [searchType, setSearchType] = useState('mobile');
+  const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [results, setResults] = useState([]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
-
     setLoading(true);
     setError('');
+    setResults([]);
 
     try {
-      const data = await api.searchAgent(query);
-      setResults(data);
+      let response;
+      if (searchType === 'mobile') {
+        response = await api.get(`/police/search/mobile/${searchValue}`);
+      } else if (searchType === 'aadhaar') {
+        response = await api.get(`/police/search/aadhaar/${searchValue}`);
+      } else if (searchType === 'name') {
+        response = await api.get(`/police/search/name/${searchValue}`);
+      }
+      setResults(response.workers || []);
     } catch (err) {
       setError(err.message || 'Search failed');
-      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      active: 'bg-green-100 text-green-800',
-      suspended: 'bg-red-100 text-red-800',
-      blacklisted: 'bg-red-100 text-red-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getRiskColor = (score) => {
-    if (score >= 70) return 'text-red-600';
-    if (score >= 30) return 'text-yellow-600';
-    return 'text-green-600';
-  };
-
   return (
-    <ProtectedRoute allowedRoles={['police']}>
-      <Layout title="Search Agent">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Search Agent</h2>
-              
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by QR code, phone number, name, or Universal Agent ID"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loading ? 'Searching...' : 'Search'}
-                </button>
-              </form>
+    <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
+      <Navbar showAuth={true} />
+      
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_90%)]"></div>
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-family='monospace' font-size='14' fill='rgba(0, 255, 65, 0.15)'%3E0x4F AB 1C 9D%3C/text%3E%3C/svg%3E")`,
+        animation: 'digital-rain 20s linear infinite'
+      }}></div>
 
-              {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-800">{error}</p>
-                </div>
-              )}
+      <div className="relative z-10 border-b border-green-500/30 bg-black/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-green-400">// AGENT_SEARCH</h1>
+            <p className="text-xs text-gray-400 mt-1">WORKER/AGENT DATABASE LOOKUP</p>
+          </div>
+          <Link
+            href="/dashboard/police"
+            className="bg-gray-800 text-green-400 font-bold py-2 px-4 rounded border border-green-500/30 hover:bg-gray-700 transition-all text-sm"
+          >
+            ← BACK TO DASHBOARD
+          </Link>
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
+        <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)] mb-8">
+          <form onSubmit={handleSearch} className="space-y-6">
+            <div>
+              <label className="block text-green-400 text-sm font-bold mb-3 uppercase tracking-wider">
+                Search Type
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setSearchType('mobile')}
+                  className={`p-4 rounded border-2 transition-all ${
+                    searchType === 'mobile'
+                      ? 'border-green-500 bg-green-900/20 text-green-400'
+                      : 'border-green-500/30 bg-black text-gray-400 hover:border-green-500/50'
+                  }`}
+                >
+                  <span className="text-sm font-bold">MOBILE NUMBER</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSearchType('aadhaar')}
+                  className={`p-4 rounded border-2 transition-all ${
+                    searchType === 'aadhaar'
+                      ? 'border-green-500 bg-green-900/20 text-green-400'
+                      : 'border-green-500/30 bg-black text-gray-400 hover:border-green-500/50'
+                  }`}
+                >
+                  <span className="text-sm font-bold">AADHAAR</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSearchType('name')}
+                  className={`p-4 rounded border-2 transition-all ${
+                    searchType === 'name'
+                      ? 'border-green-500 bg-green-900/20 text-green-400'
+                      : 'border-green-500/30 bg-black text-gray-400 hover:border-green-500/50'
+                  }`}
+                >
+                  <span className="text-sm font-bold">NAME</span>
+                </button>
+              </div>
             </div>
 
-            {results.length > 0 && (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold">Search Results ({results.length})</h3>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {results.map((agent) => (
-                    <div key={agent.id} className="p-6 hover:bg-gray-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="text-lg font-semibold">{agent.name}</h4>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(agent.status)}`}>
-                              {agent.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-gray-500">Agent ID</p>
-                              <p className="font-mono text-xs">{agent.universal_agent_id}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Mobile</p>
-                              <p>{agent.mobile}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Risk Score</p>
-                              <p className={`font-semibold ${getRiskColor(agent.risk_score)}`}>
-                                {agent.risk_score}/100
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">Police Verification</p>
-                              <p className="text-xs">{agent.police_verification_status}</p>
-                            </div>
-                          </div>
-                          {agent.providers && agent.providers.length > 0 && (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-500">
-                                Providers: {agent.providers.join(', ')}
-                              </p>
-                            </div>
-                          )}
+            <div>
+              <label className="block text-green-400 text-sm font-bold mb-2 uppercase tracking-wider">
+                {searchType === 'mobile' && 'Mobile Number'}
+                {searchType === 'aadhaar' && 'Aadhaar Number'}
+                {searchType === 'name' && 'Worker Name'}
+              </label>
+              <input
+                type="text"
+                required
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                className="w-full bg-black border-2 border-green-500/50 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-500 focus:shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                placeholder={
+                  searchType === 'mobile' ? '+91XXXXXXXXXX' :
+                  searchType === 'aadhaar' ? 'XXXX-XXXX-XXXX' :
+                  'WORKER NAME'
+                }
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-900/20 border border-red-500/50 rounded p-4">
+                <p className="text-red-400 text-sm">✗ {error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-600 text-black font-bold py-3 px-4 rounded uppercase tracking-widest hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all disabled:opacity-50"
+            >
+              {loading ? '⟳ SEARCHING...' : '→ SEARCH DATABASE'}
+            </button>
+          </form>
+        </div>
+
+        {results.length > 0 && (
+          <div className="bg-black border-2 border-green-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+            <h2 className="text-2xl font-bold text-green-400 mb-6">SEARCH RESULTS ({results.length})</h2>
+            
+            <div className="space-y-4">
+              {results.map((worker, idx) => (
+                <div key={idx} className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:bg-green-900/20 transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">{worker.full_name}</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-400">Worker ID:</span>
+                          <span className="text-white ml-2 font-mono">{worker.id}</span>
                         </div>
-                        <div className="ml-4">
-                          <Link
-                            href={`/dashboard/police/agent/${agent.id}`}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                          >
-                            View Details
-                          </Link>
+                        <div>
+                          <span className="text-gray-400">Mobile:</span>
+                          <span className="text-white ml-2">{worker.mobile || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Category:</span>
+                          <span className="text-white ml-2 uppercase">{worker.category || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Trust Score:</span>
+                          <span className={`ml-2 font-bold ${
+                            worker.trust_score >= 80 ? 'text-green-400' :
+                            worker.trust_score >= 60 ? 'text-yellow-400' :
+                            'text-red-400'
+                          }`}>{worker.trust_score || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    <Link
+                      href={`/dashboard/police/agent/${worker.id}`}
+                      className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
+                    >
+                      VIEW DETAILS →
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {results.length === 0 && !loading && query && (
-              <div className="bg-white rounded-lg shadow p-6 text-center">
-                <p className="text-gray-600">No agents found matching your search.</p>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      </Layout>
-    </ProtectedRoute>
+        )}
+
+        {!loading && results.length === 0 && searchValue && (
+          <div className="bg-black border-2 border-yellow-500/50 rounded-lg p-8 shadow-[0_0_30px_rgba(234,179,8,0.2)] text-center">
+            <svg className="w-16 h-16 mx-auto mb-4 text-yellow-400 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <p className="text-yellow-400 text-lg font-bold">NO RESULTS FOUND</p>
+            <p className="text-gray-400 mt-2">TRY A DIFFERENT SEARCH TERM</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-
