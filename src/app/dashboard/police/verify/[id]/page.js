@@ -281,8 +281,23 @@ export default function VerifyWorkerPage() {
                     <svg className="w-16 h-16 mx-auto mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                     </svg>
-                    <p className="text-gray-500 text-sm">QR Code Not Generated</p>
-                    <p className="text-gray-600 text-xs mt-1">Run regenerate_qr_codes.py</p>
+                    <p className="text-gray-500 text-sm mb-3">QR Code Not Generated</p>
+                    <button
+                      onClick={async () => {
+                        if (confirm('Generate QR code for this worker?')) {
+                          try {
+                            await api.post(`/police/regenerate-qr/${worker.id}`);
+                            alert('✅ QR Code generated successfully! Refreshing...');
+                            fetchWorkerDetails();
+                          } catch (err) {
+                            alert(`❌ Failed to generate QR code: ${err.message}`);
+                          }
+                        }
+                      }}
+                      className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
+                    >
+                      GENERATE QR CODE NOW
+                    </button>
                   </div>
                 )}
               </div>

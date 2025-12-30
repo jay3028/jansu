@@ -307,10 +307,13 @@ export default function PoliceDashboard() {
               {verifications.length > 0 ? (
                 <div className="space-y-4">
                   {verifications.map((verification, idx) => (
-                    <div key={idx} className={`border rounded-lg p-6 ${
-                      verification.status === 'approved' ? 'bg-green-900/10 border-green-500/30' :
-                      verification.status === 'rejected' ? 'bg-red-900/10 border-red-500/30' :
-                      'bg-yellow-900/10 border-yellow-500/30'
+                    <div 
+                      key={idx} 
+                      onClick={() => router.push(`/dashboard/police/verify/${verification.id}`)}
+                      className={`border rounded-lg p-6 cursor-pointer hover:scale-[1.02] transition-all ${
+                      verification.status === 'approved' ? 'bg-green-900/10 border-green-500/30 hover:border-green-500/60' :
+                      verification.status === 'rejected' ? 'bg-red-900/10 border-red-500/30 hover:border-red-500/60' :
+                      'bg-yellow-900/10 border-yellow-500/30 hover:border-yellow-500/60'
                     }`}>
                       <div className="flex justify-between items-start">
                         <div>
@@ -342,12 +345,20 @@ export default function PoliceDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className={`text-xs px-3 py-1 rounded border ${
-                          verification.status === 'approved' ? 'text-green-400 bg-green-900/20 border-green-500/50' :
-                          verification.status === 'rejected' ? 'text-red-400 bg-red-900/20 border-red-500/50' :
-                          'text-yellow-400 bg-yellow-900/20 border-yellow-500/50'
-                        }`}>
-                          {verification.status?.toUpperCase()}
+                        <div className="flex flex-col items-end gap-2">
+                          <div className={`text-xs px-3 py-1 rounded border ${
+                            verification.status === 'approved' ? 'text-green-400 bg-green-900/20 border-green-500/50' :
+                            verification.status === 'rejected' ? 'text-red-400 bg-red-900/20 border-red-500/50' :
+                            'text-yellow-400 bg-yellow-900/20 border-yellow-500/50'
+                          }`}>
+                            {verification.status?.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-green-400 flex items-center gap-1">
+                            <span>View Details</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
                     </div>

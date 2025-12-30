@@ -59,7 +59,7 @@ export default function WorkerDashboard() {
   }
 
   // Show onboarding incomplete message if worker data is missing or incomplete
-  const isOnboardingIncomplete = !workerData || !workerData.onboarding_completed;
+  const isOnboardingIncomplete = !workerData || workerData.onboarding_step < 6;
 
   return (
     <div className="min-h-screen bg-black text-white font-mono relative overflow-hidden">
@@ -121,15 +121,21 @@ export default function WorkerDashboard() {
 
           {/* Verification Status */}
           <div className={`p-6 rounded-lg border-2 ${
-            workerData?.police_verification_status === 'approved'
+            workerData?.verification_status === 'verified'
               ? 'border-green-500 bg-green-900/20'
+              : workerData?.verification_status === 'rejected'
+              ? 'border-red-500 bg-red-900/20'
               : 'border-yellow-500 bg-yellow-900/20'
           }`}>
             <div className="text-xs text-gray-400 mb-2">POLICE VERIFICATION</div>
             <div className={`text-2xl font-bold uppercase ${
-              workerData?.police_verification_status === 'approved' ? 'text-green-400' : 'text-yellow-400'
+              workerData?.verification_status === 'verified' ? 'text-green-400' :
+              workerData?.verification_status === 'rejected' ? 'text-red-400' :
+              'text-yellow-400'
             }`}>
-              {workerData?.police_verification_status || 'PENDING'}
+              {workerData?.verification_status === 'verified' ? 'VERIFIED' :
+               workerData?.verification_status === 'rejected' ? 'REJECTED' :
+               'PENDING'}
             </div>
           </div>
 
@@ -317,11 +323,11 @@ export default function WorkerDashboard() {
                 
                 {/* Police Verification */}
                 <div className={`p-6 rounded-lg border-2 ${
-                  workerData?.police_verification_status === 'approved'
+                  workerData?.verification_status === 'verified'
                     ? 'border-green-500 bg-green-900/20'
-                    : workerData?.police_verification_status === 'pending'
-                    ? 'border-yellow-500 bg-yellow-900/20'
-                    : 'border-red-500 bg-red-900/20'
+                    : workerData?.verification_status === 'rejected'
+                    ? 'border-red-500 bg-red-900/20'
+                    : 'border-yellow-500 bg-yellow-900/20'
                 }`}>
                   <div className="flex justify-between items-center">
                     <div>
@@ -329,11 +335,13 @@ export default function WorkerDashboard() {
                       <p className="text-sm text-gray-400">Background check by law enforcement</p>
                     </div>
                     <div className={`text-xl font-bold uppercase ${
-                      workerData?.police_verification_status === 'approved' ? 'text-green-400' :
-                      workerData?.police_verification_status === 'pending' ? 'text-yellow-400' :
-                      'text-red-400'
+                      workerData?.verification_status === 'verified' ? 'text-green-400' :
+                      workerData?.verification_status === 'rejected' ? 'text-red-400' :
+                      'text-yellow-400'
                     }`}>
-                      {workerData?.police_verification_status || 'PENDING'}
+                      {workerData?.verification_status === 'verified' ? 'VERIFIED' :
+                       workerData?.verification_status === 'rejected' ? 'REJECTED' :
+                       'PENDING'}
                     </div>
                   </div>
                 </div>
@@ -359,7 +367,7 @@ export default function WorkerDashboard() {
 
                 {/* Onboarding */}
                 <div className={`p-6 rounded-lg border-2 ${
-                  workerData?.onboarding_completed
+                  workerData?.onboarding_step === 6
                     ? 'border-green-500 bg-green-900/20'
                     : 'border-yellow-500 bg-yellow-900/20'
                 }`}>
@@ -369,9 +377,9 @@ export default function WorkerDashboard() {
                       <p className="text-sm text-gray-400">Registration process completion</p>
                     </div>
                     <div className={`text-xl font-bold uppercase ${
-                      workerData?.onboarding_completed ? 'text-green-400' : 'text-yellow-400'
+                      workerData?.onboarding_step === 6 ? 'text-green-400' : 'text-yellow-400'
                     }`}>
-                      {workerData?.onboarding_completed ? 'COMPLETED' : 'IN PROGRESS'}
+                      {workerData?.onboarding_step === 6 ? 'COMPLETED' : `STEP ${workerData?.onboarding_step || 0}/6`}
                     </div>
                   </div>
                 </div>
@@ -387,12 +395,30 @@ export default function WorkerDashboard() {
               {workerData?.qr_code_url ? (
                 <div className="text-center">
                   <div className="inline-block p-8 bg-white rounded-lg">
-                    <img src={workerData.qr_code_url} alt="Worker QR Code" className="w-64 h-64" />
+                    <img 
+                      src={`http://localhost:8000/${workerData.qr_code_url}`} 
+                      alt="Worker QR Code" 
+                      className="w-64 h-64"
+                      onError={(e) => {
+                        console.error('QR Code image failed to load:', e);
+                        console.log('Attempted URL:', e.target.src);
+                      }}
+                    />
                   </div>
                   <p className="mt-6 text-gray-400">
                     → SCAN THIS CODE FOR INSTANT VERIFICATION
                   </p>
-                  <button className="mt-4 bg-green-600 text-black font-bold py-2 px-6 rounded hover:bg-green-500 transition-all">
+                  <button 
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = `http://localhost:8000/${workerData.qr_code_url}`;
+                      link.download = `Worker-QR-${workerData.worker_id}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="mt-4 bg-green-600 text-black font-bold py-2 px-6 rounded hover:bg-green-500 transition-all"
+                  >
                     DOWNLOAD QR CODE
                   </button>
                 </div>
