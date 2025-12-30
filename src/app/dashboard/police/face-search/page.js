@@ -104,20 +104,34 @@ export default function FaceSearchPage() {
   };
 
   const captureFromWebcam = () => {
-    if (!webcamRef.current) return;
+    if (!webcamRef.current) {
+      setError('Webcam not ready. Please try again.');
+      return;
+    }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = webcamRef.current.videoWidth;
-    canvas.height = webcamRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(webcamRef.current, 0, 0);
-    
-    const base64 = canvas.toDataURL('image/jpeg');
-    setSearchImage(base64);
-    setSearchImagePreview(base64);
-    stopWebcam();
-    setError('');
-    setMatches([]);
+    // Check if video has dimensions (is ready)
+    if (webcamRef.current.videoWidth === 0 || webcamRef.current.videoHeight === 0) {
+      setError('Webcam not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = webcamRef.current.videoWidth;
+      canvas.height = webcamRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(webcamRef.current, 0, 0);
+      
+      const base64 = canvas.toDataURL('image/jpeg', 0.95);
+      setSearchImage(base64);
+      setSearchImagePreview(base64);
+      stopWebcam();
+      setError('');
+      setMatches([]);
+    } catch (err) {
+      console.error('Error capturing from webcam:', err);
+      setError('Failed to capture image. Please try again.');
+    }
   };
 
   const handleSearch = async () => {

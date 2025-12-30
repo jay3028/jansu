@@ -157,50 +157,45 @@ const customStyles = `
 const Hero = () => {
   const [timeData, setTimeData] = useState({ greeting: '', threatLevel: '', accentColor: '' });
   const [terminalLogs, setTerminalLogs] = useState([
-    "> INITIALIZING NETWATCH_V4...",
-    "> ESTABLISHING SECURE TUNNEL...",
+    "> [11:09:43 am] Verifying agent credentials...",
+    "> [11:09:44 am] Validating worker profile...",
   ]);
   const logsEndRef = useRef(null);
 
   // --- 1. TIME-BASED DYNAMIC LOGIC ---
   useEffect(() => {
     const updateTimeBasedData = () => {
-      const hour = new Date().getHours();
-      let greeting, threatLevel, accentColor;
-
-      // Night time (10PM - 6AM)
-      if (hour >= 22 || hour < 6) {
-        greeting = "NIGHT OPS ACTIVE";
-        threatLevel = "MIDNIGHT";
-        accentColor = "text-green-500 border-green-500 bg-green-900/20"; 
-      } else {
-        greeting = "DAYLIGHT OPS";
-        threatLevel = "ACTIVE";
-        accentColor = "text-green-400 border-green-400 bg-green-900/10";
-      }
-      setTimeData({ greeting, threatLevel, accentColor });
+      setTimeData({ 
+        greeting: "SYSTEM STATUS", 
+        threatLevel: "ONLINE", 
+        accentColor: "text-green-400 border-green-400 bg-green-900/10" 
+      });
     };
 
     updateTimeBasedData();
-    const interval = setInterval(updateTimeBasedData, 60000); 
-    return () => clearInterval(interval);
   }, []);
 
   // --- 2. TERMINAL LOGIC ---
   useEffect(() => {
     const possibleLogs = [
-      "Scanning port 443... OPEN", "Packet sniffed: IP 192.168.1.X", "Injecting payload...", 
-      "Bypassing Firewall Layer 3...", "Decryption key found: 0xFA92...", "> ROOT ACCESS GRANTED"
+      "Agent verification complete...",
+      "Checking trust status...",
+      "Verifying agent credentials...",
+      "Validating worker profile...",
+      "Scanning QR code...",
+      "Police verification confirmed..."
     ];
     
     const interval = setInterval(() => {
       setTerminalLogs(prev => {
-        const newLog = `> [${new Date().toLocaleTimeString()}] ${possibleLogs[Math.floor(Math.random() * possibleLogs.length)]}`;
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} ${now.getHours() >= 12 ? 'pm' : 'am'}`;
+        const newLog = `> [${time}] ${possibleLogs[Math.floor(Math.random() * possibleLogs.length)]}`;
         const updatedLogs = [...prev, newLog];
-        if (updatedLogs.length > 12) updatedLogs.shift(); 
+        if (updatedLogs.length > 8) updatedLogs.shift(); 
         return updatedLogs;
       });
-    }, 1500); 
+    }, 2000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -231,78 +226,83 @@ const Hero = () => {
           
           {/* 1. The "Pill" Badge */}
           <div className="flex justify-center lg:justify-start">
-            <div className={`inline-flex items-center px-4 py-1 rounded-full border ${timeData.accentColor} backdrop-blur-md shadow-lg shadow-green-500/20`}>
-               <span className="text-[10px] font-bold tracking-[0.2em] uppercase">
-                 THREAT LEVEL: {timeData.threatLevel}
+            <div className={`inline-flex items-center px-4 py-2 rounded-full border ${timeData.accentColor} backdrop-blur-md shadow-lg shadow-green-500/20`}>
+               <span className="text-xs font-bold tracking-[0.15em] uppercase">
+                 {timeData.greeting}: {timeData.threatLevel}
                </span>
             </div>
           </div>
 
-          {/* 2. The Headline (White & Dark Green Glitch) */}
+          {/* 2. The Headline - JAN SURAKSHA */}
           <div className="space-y-[-10px] md:space-y-[-20px]">
-            {/* Top Line: White */}
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white drop-shadow-lg leading-none">
-              OFFENSIVE
+            {/* Top Line: JAN (White) */}
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-white drop-shadow-lg leading-none">
+              JAN
             </h1>
             
-            {/* Bottom Line: Dark Green + Glitch + Fade */}
+            {/* Bottom Line: SURAKSHA (Green) */}
             <div className="relative">
-               {/* This text has a gradient to fade out at bottom like the reference image */}
                <h1 
-                 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-green-600 via-green-800 to-black glitch-wrapper leading-none"
-                 data-text="DIGITAL DEFENSE"
+                 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-green-400 drop-shadow-[0_0_30px_rgba(34,197,94,0.8)] leading-none"
                >
-                 DIGITAL DEFENSE
+                 SURAKSHA
                </h1>
-               
                {/* Glow effect behind the text */}
-               <div className="absolute inset-0 blur-xl bg-green-900/40 -z-10"></div>
+               <div className="absolute inset-0 blur-2xl bg-green-500/30 -z-10"></div>
             </div>
           </div>
           
-          <p className="text-gray-400 text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans">
-            When perimeter defenses fail, we are the void that stares back. Elite offensive cybersecurity for high-value targets.
+          {/* Description in English */}
+          <p className="text-gray-300 text-base md:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans">
+            JanSuraksha empowers citizens, banks, gig platforms, and law enforcement to instantly verify whether a worker is genuine, authorized, and police verified — in real time and without compromising privacy.
           </p>
 
+          {/* Hindi Text */}
+          <p className="text-gray-400 text-lg md:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>
+            देखकर नहीं, जाँचकर भरोसा करें।<br />
+            JanSuraksha के साथ सुरक्षित हर कदम।
+          </p>
+
+          {/* CTA Button */}
           <div className="flex gap-4 pt-4 justify-center lg:justify-start">
-            <button className="px-8 py-4 bg-green-600 text-black font-bold uppercase tracking-widest hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(0,255,65,0.8)] transition-all clip-path-slant group relative overflow-hidden border border-green-400/50">
-              <span className="relative z-10">ENGAGE RED TEAM</span>
-            </button>
+            <Link href="/verify" className="px-8 py-4 bg-green-600 text-black font-bold uppercase tracking-widest hover:bg-green-500 hover:shadow-[0_0_30px_rgba(0,255,65,0.8)] transition-all clip-path-slant group relative overflow-hidden border border-green-400/50 inline-block">
+              <span className="relative z-10">VERIFY AGENT</span>
+            </Link>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: LAPTOP */}
-        <div className="flex-1 w-full max-w-xl laptop-perspective-container relative lg:mt-32 lg:mr-[-50px]">
-           <div className="laptop-screen-angled bg-[#020804] border-2 border-green-500/50 rounded-lg overflow-hidden relative h-[400px] w-full backdrop-blur-xl z-30">
+        {/* RIGHT COLUMN: TERMINAL */}
+        <div className="flex-1 w-full max-w-xl laptop-perspective-container relative lg:mt-0">
+           <div className="laptop-screen-angled bg-[#001a00] border-2 border-green-500/50 rounded-lg overflow-hidden relative min-h-[400px] w-full backdrop-blur-xl z-30">
               <div className="absolute inset-0 bg-scanlines opacity-10 pointer-events-none mix-blend-overlay z-50"></div>
               
               {/* Terminal Header */}
               <div className="bg-green-900/20 px-4 py-2 flex justify-between items-center border-b border-green-500/30 backdrop-blur-sm">
                   <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-500/50 animate-pulse"></div>
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
                   </div>
-                  <div className="text-xs text-green-400 font-bold font-mono">Target: 192.168.0.1 [LIVE]</div>
+                  <div className="text-xs text-green-400 font-bold font-mono">Jan Suraksha System [ACTIVE]</div>
               </div>
 
               {/* Logs */}
-              <div className="p-4 h-full overflow-y-auto font-mono text-xs md:text-sm text-green-300 flex flex-col gap-1 pb-12 relative z-20 terminal-scroll">
+              <div className="p-6 h-full overflow-y-auto font-mono text-sm text-green-300 flex flex-col gap-2 pb-12 relative z-20 terminal-scroll">
                   {terminalLogs.map((log, index) => (
-                      <div key={index} className={`${index === terminalLogs.length - 1 ? 'text-green-100 font-bold' : 'opacity-70'}`}>
+                      <div key={index} className={`${index === terminalLogs.length - 1 ? 'text-green-400 font-bold' : 'text-green-400/70'}`}>
                         {log}
                       </div>
                   ))}
-                   <div className="flex items-center">
-                    <span className="text-green-500 mr-2">$</span>
-                    <span className="blink-cursor bg-green-500 w-2 h-4 block"></span>
+                   <div className="flex items-center mt-2">
+                    <span className="text-green-500 mr-2">❯</span>
+                    <span className="blink-cursor bg-green-400 w-2 h-4 block"></span>
                   </div>
                   <div ref={logsEndRef} />
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-green-500/20 to-transparent z-10 pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#001a00] to-transparent z-10 pointer-events-none"></div>
            </div>
-           {/* Background Glow behind laptop */}
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/10 blur-[100px] rounded-full -z-10 pointer-events-none animate-pulse"></div>
+           {/* Background Glow behind terminal */}
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-green-500/10 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
         </div>
 
       </div>

@@ -38,88 +38,87 @@ export default function Home() {
       <Hero />
 
       {/* Features Section */}
-      <div className="bg-black border-t border-green-900/30 py-20">
+      <div className="bg-gradient-to-b from-black to-green-950/5 border-t border-green-900/30 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-green-400 mb-12 tracking-wider uppercase">
             // PLATFORM_FEATURES
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Feature 1 - Unique Worker Identity */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Unique Worker Identity</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Every worker is issued a unique digital ID and QR code, creating a single, verified identity usable across banks and gig platforms.
+              </p>
+            </div>
+
+            {/* Feature 2 - Real-Time Verification */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
                 <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">Real-Time Verification</h3>
-              <p className="text-gray-400 text-sm">
-                Instantly verify delivery agents and AePS operators using QR codes, 
-                phone numbers, or Universal Agent IDs.
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Real-Time Verification</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Citizens, companies, and police can instantly verify a worker by scanning the QR or entering the ID—no delays, no guesswork.
               </p>
             </div>
 
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
-              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">Trust Backbone</h3>
-              <p className="text-gray-400 text-sm">
-                Central verification database with comprehensive agent profiles, 
-                police verification status, and risk assessments.
-              </p>
-            </div>
-
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
-              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">AI Risk Intelligence</h3>
-              <p className="text-gray-400 text-sm">
-                AI-based risk monitoring system ready for federated learning, 
-                providing real-time risk scores and fraud detection.
-              </p>
-            </div>
-
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
-              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
-                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">AePS Safety</h3>
-              <p className="text-gray-400 text-sm">
-                Customer intent verification before biometric authentication, 
-                transaction mismatch detection, and fraud prevention.
-              </p>
-            </div>
-
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
+            {/* Feature 3 - Digitized Police Verification */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
                 <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">Police Integration</h3>
-              <p className="text-gray-400 text-sm">
-                Complete police verification workflow, agent search, 
-                incident logging, and enforcement capabilities.
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Digitized Police Verification</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Police verification is digitally recorded, standardized, and time-bound, with real-time status and automatic expiry alerts.
               </p>
             </div>
 
-            <div className="p-6 bg-green-900/10 border border-green-500/30 rounded-lg hover:border-green-500/50 hover:shadow-[0_0_20px_rgba(34,197,94,0.2)] transition-all">
+            {/* Feature 4 - Live Status Control */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
                 <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-green-400 mb-2 uppercase tracking-wider">Admin Dashboard</h3>
-              <p className="text-gray-400 text-sm">
-                Comprehensive system administration, user management, 
-                audit logs, and system monitoring.
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Live Status Control</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Banks and platforms can activate, deactivate, or suspend workers instantly, with status updates reflected in real time.
+              </p>
+            </div>
+
+            {/* Feature 5 - Anti-Impersonation Protection */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Anti-Impersonation Protection</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Live selfie capture and photo matching ensure only the genuine worker can register and operate—no fake IDs, no reuse.
+              </p>
+            </div>
+
+            {/* Feature 6 - Privacy By Design */}
+            <div className="p-6 bg-gradient-to-br from-green-900/5 to-green-900/10 border border-green-500/20 rounded-lg hover:border-green-500/40 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] transition-all">
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-green-400 mb-3 uppercase tracking-wider">Privacy By Design</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                No raw Aadhaar storage, no continuous tracking—only purpose-limited, role-based access, fully compliant with Indian laws.
               </p>
             </div>
           </div>
