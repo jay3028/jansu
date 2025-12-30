@@ -155,12 +155,20 @@ export default function PoliceDashboard() {
             <h1 className="text-2xl font-bold text-green-400">// POLICE_DASHBOARD</h1>
             <p className="text-xs text-gray-400 mt-1">LAW ENFORCEMENT VERIFICATION SYSTEM</p>
           </div>
-          <Link
-            href="/dashboard/police/search"
-            className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
-          >
-            SEARCH AGENT
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/dashboard/police/face-search"
+              className="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-500 transition-all text-sm flex items-center gap-2"
+            >
+              🔍 FACE SEARCH
+            </Link>
+            <Link
+              href="/dashboard/police/search"
+              className="bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 transition-all text-sm"
+            >
+              SEARCH AGENT
+            </Link>
+          </div>
         </div>
       </div>
 

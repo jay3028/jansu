@@ -12,10 +12,18 @@ export default function WorkerDashboard() {
   const [workerData, setWorkerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
 
   useEffect(() => {
     fetchWorkerData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'activity' && activities.length === 0) {
+      fetchActivities();
+    }
+  }, [activeTab]);
 
   const fetchWorkerData = async () => {
     try {
@@ -35,6 +43,19 @@ export default function WorkerDashboard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchActivities = async () => {
+    setActivitiesLoading(true);
+    try {
+      const response = await api.get('/workers/me/activity');
+      setActivities(response.activities || []);
+      console.log('Activities loaded:', response.activities?.length || 0);
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+    } finally {
+      setActivitiesLoading(false);
     }
   };
 
@@ -206,6 +227,16 @@ export default function WorkerDashboard() {
               }`}
             >
               QR CODE
+            </button>
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`px-6 py-3 font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'activity'
+                  ? 'text-green-400 border-b-2 border-green-500'
+                  : 'text-gray-400 hover:text-green-400'
+              }`}
+            >
+              ACTIVITY
             </button>
           </div>
         </div>
@@ -429,6 +460,119 @@ export default function WorkerDashboard() {
                   </svg>
                   <p>QR CODE NOT GENERATED YET</p>
                   <p className="text-sm mt-2">COMPLETE VERIFICATION TO GET YOUR QR CODE</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Activity Tab */}
+          {activeTab === 'activity' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-green-400 mb-6">MY ACTIVITY (Last 2 Weeks)</h2>
+              
+              {activitiesLoading ? (
+                <div className="text-center py-12">
+                  <div className="text-green-400 text-xl">⟳ LOADING ACTIVITIES...</div>
+                </div>
+              ) : activities.length > 0 ? (
+                <div className="space-y-4">
+                  {activities.map((activity, idx) => (
+                    <div key={idx} className="bg-green-900/10 border border-green-500/30 rounded-lg p-6 hover:border-green-500/50 transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          {/* Delivery Worker Activity */}
+                          {activity.activity_type === 'delivery' && (
+                            <>
+                              <div className="flex items-center gap-3 mb-3">
+                                <span className="text-3xl">📦</span>
+                                <div>
+                                  <h3 className="text-xl font-bold text-white">{activity.package_id} - {activity.package_type}</h3>
+                                  <p className="text-sm text-gray-400">{activity.delivery_partner}</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-gray-400">Recipient:</span>
+                                  <span className="text-white ml-2">{activity.recipient_name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Contact:</span>
+                                  <span className="text-white ml-2">{activity.recipient_contact}</span>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <span className="text-gray-400">📍 Location:</span>
+                                  <span className="text-white ml-2">{activity.location}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Date:</span>
+                                  <span className="text-white ml-2">{new Date(activity.activity_date).toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          
+                          {/* AePS Agent Activity */}
+                          {activity.activity_type === 'transaction' && (
+                            <>
+                              <div className="flex items-center gap-3 mb-3">
+                                <span className="text-3xl">💰</span>
+                                <div>
+                                  <h3 className="text-xl font-bold text-white">{activity.transaction_type}</h3>
+                                  {activity.transaction_amount && (
+                                    <p className="text-lg text-green-400 font-bold">₹{activity.transaction_amount.toLocaleString()}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-gray-400">Customer:</span>
+                                  <span className="text-white ml-2">{activity.customer_name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Contact:</span>
+                                  <span className="text-white ml-2">{activity.customer_contact}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Bank:</span>
+                                  <span className="text-white ml-2">{activity.bank_name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Date:</span>
+                                  <span className="text-white ml-2">{new Date(activity.activity_date).toLocaleString()}</span>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <span className="text-gray-400">📍 Location:</span>
+                                  <span className="text-white ml-2">{activity.location}</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className={`text-xs px-3 py-1 rounded border ${
+                            activity.status === 'completed' 
+                              ? 'text-green-400 bg-green-900/20 border-green-500/50'
+                              : 'text-yellow-400 bg-yellow-900/20 border-yellow-500/50'
+                          }`}>
+                            {activity.status.toUpperCase()}
+                          </div>
+                        </div>
+                      </div>
+                      {activity.notes && (
+                        <div className="mt-3 pt-3 border-t border-green-900/30">
+                          <p className="text-sm text-gray-400">📝 {activity.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p>NO ACTIVITIES FOUND</p>
+                  <p className="text-sm mt-2">Your work activities from the last 2 weeks will appear here</p>
                 </div>
               )}
             </div>

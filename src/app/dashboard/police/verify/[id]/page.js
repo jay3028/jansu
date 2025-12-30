@@ -15,10 +15,13 @@ export default function VerifyWorkerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
 
   useEffect(() => {
     if (params.id && user?.role === 'police') {
       fetchWorkerDetails();
+      fetchWorkerActivities();
     } else if (user && user.role !== 'police') {
       router.push('/');
     }
@@ -35,6 +38,19 @@ export default function VerifyWorkerPage() {
       setError(err.message || 'Failed to load worker details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWorkerActivities = async () => {
+    setActivitiesLoading(true);
+    try {
+      const response = await api.get(`/police/workers/${params.id}/activities`);
+      setActivities(response.activities || []);
+      console.log('[WORKER ACTIVITIES]', response.activities?.length || 0, 'activities found');
+    } catch (err) {
+      console.error('Error fetching worker activities:', err);
+    } finally {
+      setActivitiesLoading(false);
     }
   };
 
@@ -348,6 +364,121 @@ export default function VerifyWorkerPage() {
             </div>
           </div>
         )}
+
+        {/* Worker Activity */}
+        <div className="mt-6 bg-black border-2 border-green-500/50 rounded-lg p-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+          <h3 className="text-lg font-bold text-green-400 mb-4">WORKER ACTIVITY (Last 2 Weeks)</h3>
+          
+          {activitiesLoading ? (
+            <div className="text-center py-8">
+              <div className="text-green-400 text-lg">⟳ LOADING ACTIVITIES...</div>
+            </div>
+          ) : activities.length > 0 ? (
+            <div className="space-y-3">
+              {activities.map((activity, idx) => (
+                <div key={idx} className="bg-gray-900/50 border border-gray-700 rounded p-4 hover:border-green-500/30 transition-all text-sm">
+                  {/* Delivery Worker Activity */}
+                  {activity.activity_type === 'delivery' && (
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">📦</span>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white font-bold">{activity.package_id} - {activity.package_type}</span>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              activity.status === 'completed' 
+                                ? 'text-green-400 bg-green-900/20 border border-green-500/50'
+                                : 'text-yellow-400 bg-yellow-900/20 border border-yellow-500/50'
+                            }`}>
+                              {activity.status?.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400">{activity.delivery_partner}</p>
+                        </div>
+                      </div>
+                      <div className="ml-9 space-y-1 text-xs">
+                        <div>
+                          <span className="text-gray-400">Recipient:</span>
+                          <span className="text-white ml-2">{activity.recipient_name} ({activity.recipient_contact})</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">📍 Location:</span>
+                          <span className="text-white ml-2">{activity.location}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Date:</span>
+                          <span className="text-white ml-2">{new Date(activity.activity_date).toLocaleString()}</span>
+                        </div>
+                        {activity.notes && (
+                          <div className="mt-2 pt-2 border-t border-gray-700">
+                            <span className="text-gray-400">📝 {activity.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* AePS Agent Activity */}
+                  {activity.activity_type === 'transaction' && (
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">💰</span>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="text-white font-bold">{activity.transaction_type}</span>
+                              {activity.transaction_amount && (
+                                <span className="text-green-400 font-bold ml-2">₹{activity.transaction_amount.toLocaleString()}</span>
+                              )}
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              activity.status === 'completed' 
+                                ? 'text-green-400 bg-green-900/20 border border-green-500/50'
+                                : 'text-yellow-400 bg-yellow-900/20 border border-yellow-500/50'
+                            }`}>
+                              {activity.status?.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-9 space-y-1 text-xs">
+                        <div>
+                          <span className="text-gray-400">Customer:</span>
+                          <span className="text-white ml-2">{activity.customer_name} ({activity.customer_contact})</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Bank:</span>
+                          <span className="text-white ml-2">{activity.bank_name}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">📍 Location:</span>
+                          <span className="text-white ml-2">{activity.location}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Date:</span>
+                          <span className="text-white ml-2">{new Date(activity.activity_date).toLocaleString()}</span>
+                        </div>
+                        {activity.notes && (
+                          <div className="mt-2 pt-2 border-t border-gray-700">
+                            <span className="text-gray-400">📝 {activity.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <p>NO ACTIVITIES FOUND</p>
+              <p className="text-xs mt-1">Worker has no recorded activities in the last 2 weeks</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
