@@ -242,14 +242,24 @@ export default function PoliceDashboard() {
               {verifications.filter(v => v.status === 'pending').length > 0 ? (
                 <div className="space-y-4">
                   {verifications.filter(v => v.status === 'pending').map((verification, idx) => (
-                    <div key={idx} className="bg-yellow-900/10 border border-yellow-500/30 rounded-lg p-6">
+                    <div 
+                      key={idx} 
+                      className="bg-yellow-900/10 border border-yellow-500/30 rounded-lg p-6 hover:border-yellow-500/50 transition-all cursor-pointer"
+                      onClick={() => router.push(`/dashboard/police/verify/${verification.id}`)}
+                    >
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className="text-xl font-bold text-white mb-2">{verification.worker?.full_name || 'N/A'}</h3>
                           <div className="text-sm space-y-1">
                             <div>
                               <span className="text-gray-400">Worker ID:</span>
-                              <span className="text-white ml-2 font-mono">{verification.worker_id}</span>
+                              <span className={`ml-2 font-mono ${
+                                verification.worker_id === 'Pending Verification' 
+                                  ? 'text-yellow-400 italic' 
+                                  : 'text-white'
+                              }`}>
+                                {verification.worker_id}
+                              </span>
                             </div>
                             <div>
                               <span className="text-gray-400">Mobile:</span>
@@ -269,19 +279,11 @@ export default function PoliceDashboard() {
                           PENDING
                         </div>
                       </div>
-                      <div className="flex gap-4 mt-4 pt-4 border-t border-yellow-900/30">
-                        <button
-                          onClick={() => handleApprove(verification.id)}
-                          className="flex-1 bg-green-600 text-black font-bold py-2 px-4 rounded hover:bg-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.8)] transition-all"
-                        >
-                          ✓ APPROVE
-                        </button>
-                        <button
-                          onClick={() => handleReject(verification.id)}
-                          className="flex-1 bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.8)] transition-all"
-                        >
-                          ✗ REJECT
-                        </button>
+                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-yellow-900/30 text-green-400 hover:text-green-300 transition-all">
+                        <span className="font-bold text-sm uppercase tracking-wider">Click to View Full Details & Verify</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
                     </div>
                   ))}
@@ -316,7 +318,13 @@ export default function PoliceDashboard() {
                           <div className="text-sm space-y-1">
                             <div>
                               <span className="text-gray-400">Worker ID:</span>
-                              <span className="text-white ml-2 font-mono">{verification.worker_id}</span>
+                              <span className={`ml-2 font-mono ${
+                                verification.worker_id === 'Pending Verification' 
+                                  ? 'text-yellow-400 italic' 
+                                  : 'text-white'
+                              }`}>
+                                {verification.worker_id}
+                              </span>
                             </div>
                             <div>
                               <span className="text-gray-400">Status:</span>

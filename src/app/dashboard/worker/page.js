@@ -224,7 +224,15 @@ export default function WorkerDashboard() {
                   <label className="block text-green-400 text-xs font-bold mb-2 uppercase tracking-wider">
                     Worker ID
                   </label>
-                  <div className="text-white text-lg font-mono">{workerData?.id || 'N/A'}</div>
+                  <div className={`text-lg font-mono ${
+                    workerData?.worker_id_status === 'verified' 
+                      ? 'text-green-400' 
+                      : workerData?.worker_id_status === 'pending'
+                      ? 'text-yellow-400 italic'
+                      : 'text-gray-400 italic'
+                  }`}>
+                    {workerData?.worker_id || 'N/A'}
+                  </div>
                 </div>
 
                 <div>
