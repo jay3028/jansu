@@ -2,6 +2,13 @@
 
 National Last-Mile Trust & Verification Platform - Frontend
 
+## Team - Wavelet Tree
+
+**Team Members:**
+- **Abhinav Rai** - Rajiv Gandhi Institute Of Petroleum Technology
+- **Kunal Kumar** - Rajiv Gandhi Institute Of Petroleum Technology
+- **Jay Kumar** - Rajiv Gandhi Institute Of Petroleum Technology
+
 ## Tech Stack
 
 - Next.js 16 (App Router)
